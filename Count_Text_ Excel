@@ -1,0 +1,71 @@
+import pandas as pd
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.decomposition import LatentDirichletAllocation
+
+# Download NLTK resources
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+
+excel_file = r"D:\Chime_comment\SS DD Promoter.xlsx"
+df = pd.read_excel(excel_file)
+df
+# Check for missing values
+missing_values = df['Nps Comment'].isna().sum()
+print("Number of missing values:", missing_values)
+
+# Handle missing values
+df = df.dropna(subset=['Nps Comment'])  # Remove rows with missing values
+
+# Ensure data types
+df['Nps Comment'] = df['Nps Comment'].astype(str)
+
+stop_words = set(stopwords.words('english'))
+lemmatizer = WordNetLemmatizer()
+
+def preprocess_text(text):
+    tokens = word_tokenize(text.lower())  # Convert to lowercase and tokenize
+    tokens = [token for token in tokens if token.isalpha()]  # Remove non-alphabetic tokens
+    tokens = [token for token in tokens if token not in stop_words]  # Remove stop words
+    tokens = [lemmatizer.lemmatize(token) for token in tokens]  # Lemmatization
+    return " ".join(tokens)
+
+df['cleaned_text'] = df['Nps Comment'].apply(preprocess_text)
+df['cleaned_text']
+
+def top_words_frequency_from_dataframe(df, text_column):
+    # Extract text data from the specified column
+    text_corpus = df[text_column]
+    
+    # Initialize CountVectorizer
+    count_vectorizer = CountVectorizer(max_features=100)
+    
+    # Fit and transform the text corpus
+    word_count = count_vectorizer.fit_transform(text_corpus)
+    
+    # Get feature names (words)
+    feature_names = count_vectorizer.get_feature_names_out()
+    
+    # Calculate word frequencies
+    word_frequencies = word_count.toarray().sum(axis=0)
+    
+    # Create DataFrame to store top words and their frequency
+    top_words_df = pd.DataFrame({'Word': feature_names, 'Frequency': word_frequencies})
+    
+    # Sort DataFrame by frequency in descending order
+    top_words_df = top_words_df.sort_values(by='Frequency', ascending=False).reset_index(drop=True)
+    
+    return top_words_df
+
+top_100_words_df = top_words_frequency_from_dataframe(df, 'Nps Comment')
+print(top_100_words_df)
+
+filtered_df = top_100_words_df[top_100_words_df['Word'].str.len() > 3]
+
+# Export the filtered DataFrame to Excel
+filtered_df.to_excel(r'D:\ZSS DD Promoter.xlsx', index=False)
