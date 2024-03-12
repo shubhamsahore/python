@@ -1,0 +1,18 @@
+import pandas as pd
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+
+# Read data from Excel file
+df = pd.read_excel(r"D:\Word Cloud\ZActive Detractor.xlsx") #File Name
+
+# Assuming your Excel file has a column named 'words' containing the words and a column named 'frequency' containing their frequencies
+words_and_frequencies = dict(zip(df['Word'], df['Frequency'])) #Column Names
+
+# Generate the word cloud
+wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(words_and_frequencies)
+
+# Display the generated word cloud using matplotlib
+plt.figure(figsize=(10, 5))
+plt.imshow(wordcloud, interpolation='bilinear')
+plt.axis('off')
+plt.show()
